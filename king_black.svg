@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="50"
+   height="50"
+   viewBox="0 0 13.229166 13.229167"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1">
+    <g
+       id="g6"
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.3;stroke-dasharray:none;stroke-opacity:1">
+      <path
+         id="rect2-1"
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.24979;stroke-dasharray:none;stroke-opacity:1"
+         d="m 5.9348247,11.16367 a 2.6908722,2.6908722 0 0 1 -2.3209046,1.328691 2.6908722,2.6908722 0 0 1 -0.4203789,-0.0327 v 0.580871 H 9.837421 v -0.580871 a 2.6908722,2.6908722 0 0 1 -0.4195182,0.0327 2.6908722,2.6908722 0 0 1 -2.3204744,-1.328691 z" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.3;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2"
+         width="7.9791927"
+         height="0.9660781"
+         x="2.5258849"
+         y="12.102101" />
+      <g
+         id="g5"
+         transform="matrix(0.52873139,0,0,0.52873139,3.8581218,10.302506)">
+        <ellipse
+           style="fill:#000000;stroke:#000000;stroke-width:0.299"
+           id="path1"
+           cx="-0.61469769"
+           cy="-3.6342087"
+           rx="6.4175186"
+           ry="3.2202601"
+           transform="rotate(47.757491)" />
+        <ellipse
+           style="fill:#000000;stroke:#000000;stroke-width:0.299"
+           id="ellipse2"
+           cx="-7.6242547"
+           cy="4.0847397"
+           rx="6.4175186"
+           ry="3.2202601"
+           transform="matrix(-0.67227002,0.74030603,0.74030603,0.67227002,0,0)" />
+        <path
+           id="path2"
+           style="fill:#000000;stroke:#000000;stroke-width:0.178188"
+           d="m 7.830399,-10.085541 a 2.6682275,2.7171768 0 0 0 -2.668046,-2.717063 2.6682275,2.7171768 0 0 0 -2.668378,2.717063 2.6682275,2.7171768 0 0 0 0.38782,1.4105273 2.6682275,2.7171768 0 0 0 0.0013,0.0023 l 2.279232,4.6449039 2.279232,-4.6449039 a 2.6682275,2.7171768 0 0 0 0.0013,-0.0023 2.6682275,2.7171768 0 0 0 0.38749,-1.4105273 z" />
+        <g
+           id="g4"
+           transform="matrix(0.81818182,0,0,0.81818182,10.380111,-2.1579925)">
+          <path
+             style="fill:#000000;stroke:#000000;stroke-width:0.299"
+             d="m -6.3945163,-11.362918 v -5.888475"
+             id="path3" />
+          <path
+             style="fill:#000000;stroke:#000000;stroke-width:0.299"
+             d="M -4.1403344,-15.181226 H -8.6947022"
+             id="path4" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
