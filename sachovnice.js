@@ -50,15 +50,14 @@ window.onload = function () {
 
         let piece = event.target;
 
-        // handle if the user clicks the same piece twice - situation when user does not click legal move,
-        // rather he clicks the same piece twice
+        // handle when the user clicks the same piece twice - cancel / remove highlighted moves
         piece.addEventListener("click", function cancelHandler(ev) {
             ev.preventDefault();
             cleanUp();
             startTurn();
         }, { once: true });
 
-        // handle if the user clicks on a different piece, which is of his color (not the opposite color)
+        // handle if the user clicks on a different piece, which is of his color - cancel moves
         if (isWhitesTurn) {// depending on who's turn it is, choose pieces
             pieces = document.getElementsByClassName("white piece");
         } else {
@@ -73,27 +72,39 @@ window.onload = function () {
             }, { once: true });
         }
 
-        // get array of legal moves. The array includes also opposite pieces, which can be taken
-        let legalMoves = findLegalMoves(piece);
+        // At this point, take care of legal moves
+
+
+        let legalMoves = [];
+        // we gotta decide, in case this is not a 'check' situation, find normal legal moves
+        // but, if it is check, find only moves which prevent or are legal in check
+        if (isBlackKingInCheck || isWhiteKingInCheck) {
+            legalMoves = findLegalCheckMoves(piece);
+        } else {
+            legalMoves = findLegalMoves(piece);
+        }
 
         //HIGHLIGHT MOVES WHICH ARE TO EMPTY SQUARES
         legalMoves = highlightMoves(legalMoves);
 
-        // here we add event listeners to each legal move. If it will be clicked, we will handle what is next - move.
+        // here we add event listeners to each legal move. If it will be clicked, we will handle the move.
         for (let legalMove of legalMoves) {
             legalMove.addEventListener("click", function moveHandler(event) {
                 event.preventDefault();
                 moveToSquare(piece, legalMove, false);
 
-                // at this point we need to find out if this was not a check
+                let isWhite = piece.classList.contains("white");
+                // once we moved - it cannot be check anymore.
+                isWhiteKingInCheck = false;
+                isBlackKingInCheck = false;
+
+                // the only possiblity is that we gave a check to opponent, this we check below:
                 // the color of the piece which gave a check \/ -- because it is still our turn, 
                 // and we are looking if WE gave a check to oponent ( we are assuming that WE are not in check);
-                let isWhite = piece.classList.contains("white");
-
                 // here we will store how many pieces checks the king
                 let nrOfCheckingPieces = isKingInCheck(isWhite);
 
-                // the color of checked king
+                // the color of potentially checked king
                 let checkedKingColor = isWhite ? "black" : "white";
                 if (checkedKingColor === "white" && nrOfCheckingPieces > 0) {
                     isWhiteKingInCheck = true;
@@ -105,9 +116,9 @@ window.onload = function () {
                     isBlackKingInCheck = false;
                 }
 
-                if (nrOfCheckingPieces >= 2){
+                if (nrOfCheckingPieces >= 2) {
                     isDoubleCheck = true;
-                } else if (nrOfCheckingPieces === 0){
+                } else if (nrOfCheckingPieces === 0) {
                     isDoubleCheck = false;
                 }
 
@@ -130,7 +141,7 @@ window.onload = function () {
         return nrOfCheckingPieces;
     }
 
-    function getCheckingPieces(isWhite){
+    function getCheckingPieces(isWhite) {
         let checkingPieces = [];
         let sameColor = isWhite ? "white" : "black";
         let oponentsColor = isWhite ? "black" : "white";
@@ -149,7 +160,7 @@ window.onload = function () {
         return checkingPieces;
     }
 
-    function getPiecesToPlayInCheck(){
+    function getPiecesToPlayInCheck() {
         let pieces = [];
         let currentColor = isWhitesTurn ? "white" : "black";
         let isKingWhite = isWhitesTurn ? true : false;
@@ -157,7 +168,7 @@ window.onload = function () {
         pieces.push(...Array.from(document.getElementsByClassName(currentColor + " piece king")));
 
         // in case it is double check, we will return only king, since you cannot block or take
-        if (isDoubleCheck){
+        if (isDoubleCheck) {
             return pieces;
         }
 
@@ -169,7 +180,7 @@ window.onload = function () {
         let checkingPiece = getCheckingPieces(!(isKingWhite));
 
         // if there is different number of checking pieces than 1, return null -> invalid state
-        if (!(checkingPiece.length === 1)){
+        if (!(checkingPiece.length === 1)) {
             return [];
         }
         pieces.push(...getAttackingPieces(checkingPiece[0], isKingWhite));
@@ -179,18 +190,19 @@ window.onload = function () {
         return pieces;
     }
 
+    // this function return array of pieces, which can block current check on their king
     // we must be careful about colors -> the function getCheckingPieces is working with opposite color than the kings color.
-    function getBlockingPieces(){
+    function getBlockingPieces() {
         let blockingPieces = [];
         let isWhite = isWhitesTurn ? true : false;
         let currentColor = isWhitesTurn ? "white" : "black";
 
         let kingInCheck = document.getElementsByClassName(`${currentColor} piece king`);
-    
+
         let checkingPiece = getCheckingPieces(!(isWhite));
 
         // if there is different number of checking pieces than 1, return null -> invalid state
-        if (!(checkingPiece.length === 1)){
+        if (!(checkingPiece.length === 1)) {
             return [];
         }
 
@@ -198,10 +210,10 @@ window.onload = function () {
         // now the hard part. We must take all the pieces of kingInCheck army and look if they can reach that square
         let kingsArmy = [];
         kingsArmy.push(...Array.from(document.getElementsByClassName(currentColor)));
-        
-        for (let piece of kingsArmy){
+
+        for (let piece of kingsArmy) {
             // skip king
-            if (piece.classList.contains("king")){
+            if (piece.classList.contains("king")) {
                 continue;
             }
             // else get legal moves
@@ -209,7 +221,7 @@ window.onload = function () {
             // and check if the piece can get to any of the squares between king and checker
             let intersection = squaresBetweenKingAndChecker.some(item => legalMoves.includes(item));
 
-            if (intersection){
+            if (intersection) {
                 blockingPieces.push(piece);
             }
         }
@@ -217,32 +229,34 @@ window.onload = function () {
         return blockingPieces;
     }
 
-    function getSquaresBetweenKingAndChecker(kingInCheck, checkingPiece){
+    function getSquaresBetweenKingAndChecker(kingInCheck, checkingPiece) {
         let isCheckerWhite = checkingPiece.classList.contains("white");
 
         let rowsDifference = getRowIndex(checkingPiece) - getRowIndex(kingInCheck);
         let colsDifference = getColumnsIndex(checkingPiece) - getColumnsIndex(kingInCheck);
 
         let direction;
-        if (rowsDifference > 0 && colsDifference > 0){
+        if (rowsDifference > 0 && colsDifference > 0) {
             direction = isCheckerWhite ? "top-left" : "bottom-right";
         } else if (rowsDifference > 0 && colsDifference === 0) {
             direction = isCheckerWhite ? "front" : "back";
         } else if (rowsDifference > 0 && colsDifference < 0) {
             direction = isCheckerWhite ? "top-right" : "bottom-left";
-        } else if (rowsDifference === 0 && colsDifference > 0){
+        } else if (rowsDifference === 0 && colsDifference > 0) {
             direction = isCheckerWhite ? "left" : "right";
-        } else if (rowsDifference === 0 && colsDifference < 0){
+        } else if (rowsDifference === 0 && colsDifference < 0) {
             direction = isCheckerWhite ? "right" : "left";
-        } else if (rowsDifference < 0 && colsDifference > 0){
+        } else if (rowsDifference < 0 && colsDifference > 0) {
             direction = isCheckerWhite ? "bottom-left" : "top-right";
-        } else if (rowsDifference < 0 && colsDifference === 0){
+        } else if (rowsDifference < 0 && colsDifference === 0) {
             direction = isCheckerWhite ? "back" : "front";
-        } else if (rowsDifference < 0 && colsDifference < 0){
+        } else if (rowsDifference < 0 && colsDifference < 0) {
             direction = isCheckerWhite ? "bottom-right" : "top-left";
         }
 
         let squaresBetween = [];
+        // include the checking piece -> possiblity to take the piece
+        squaresBetween.push(checkingPiece);
         squaresBetween.push(...getMoves(checkingPiece, isCheckerWhite, direction));
         // remove the king from there, because he suppose to be in on the last position
         squaresBetween.pop();
@@ -667,6 +681,78 @@ window.onload = function () {
         // last possibility is that is is same color piece, which means we do nothing and we return
 
         return legalMoves;
+    }
+
+    /// SECTION FOR GETTING THE MOVES IN CASE IT IS CHECK
+
+    function findLegalCheckMoves(piece) {
+
+        let pieceClasses = piece.classList;
+        let pieceType;
+        let legalMoves = [];
+        for (let pieceClass of pieceClasses) {
+            if (pieceClass === "white" || pieceClass === "black") {
+                continue;
+            } else if (pieceClass === "piece") {
+                continue;
+            } else {
+                // save the class
+                pieceType = pieceClass;
+            }
+        }
+
+        switch (pieceType) {
+            case "pawn":
+                legalMoves = findLegalPawnMoves(piece);
+                break;
+            case "knight":
+                legalMoves = findLegalKnightMoves(piece);
+                break;
+            case "bishop":
+                legalMoves = findLegalBishopMoves(piece);
+                break;
+            case "rook":
+                legalMoves = findLegalRookMoves(piece);
+                break;
+            case "queen":
+                legalMoves = findLegalQueenMoves(piece);
+                break;
+            case "king":
+                legalMoves = findLegalKingMoves(piece);
+                break;
+            default:
+                break;
+        }
+
+        // now go through legal moves and pick only those which are on the line between attacker and king
+        let legalCheckMoves = [];
+
+        let isWhite = piece.classList.contains("white");
+        let currentColor = isWhitesTurn ? "white" : "black";
+
+        let kingInCheck = document.getElementsByClassName(`${currentColor} piece king`);
+
+        let checkingPiece = getCheckingPieces(!(isWhite));
+
+        // if there is different number of checking pieces than 1, return null -> invalid state
+        if (!(checkingPiece.length === 1)) {
+            return [];
+        }
+
+        let squaresBetweenKingAndChecker = getSquaresBetweenKingAndChecker(kingInCheck[0], checkingPiece[0]);
+        // if we are looking at kings moves, return normal legal moves
+        if (piece.classList.contains("king")) {
+            return legalMoves;
+        }
+
+        // go through each move and check if it lays on the line between attacker and king. If yes, add it.
+        for (potentialMove of legalMoves) {
+            if (squaresBetweenKingAndChecker.includes(potentialMove)) {
+                legalCheckMoves.push(potentialMove);
+            }
+        }
+
+        return legalCheckMoves;
     }
 
     /// SECTION for DEFENDiNG and ATTACKING stuff
@@ -1368,9 +1454,9 @@ window.onload = function () {
         }
 
         for (let possibleMove of possibleMoves) {
-            if (possibleMove === null || possibleMove[0] === null || possibleMove[1] === null){
+            if (possibleMove === null || possibleMove[0] === null || possibleMove[1] === null) {
                 continue;
-            } else if (virtualBoard[possibleMove[0]][possibleMove[1]].includes(oppositeColorMark) || virtualBoard[possibleMove[0]][possibleMove[1]] === "s"){
+            } else if (virtualBoard[possibleMove[0]][possibleMove[1]].includes(oppositeColorMark) || virtualBoard[possibleMove[0]][possibleMove[1]] === "s") {
                 attackingMoves.push(possibleMove);
             }
         }
