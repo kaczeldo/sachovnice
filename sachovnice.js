@@ -23,6 +23,13 @@ window.onload = function () {
 
     let isDoubleCheck = false;
 
+    let whiteKingHasMoved = false;
+    let blackKingHasMoved = false;
+    let whiteLeftRookHasMoved = false;
+    let whiteRightRookHasMoved = false;
+    let blackLeftRookHasMoved = false;
+    let blackRightRookHasMoved = false;
+
     function startTurn() {
         if (gameOver) {
             return;
@@ -73,8 +80,6 @@ window.onload = function () {
         }
 
         // At this point, take care of legal moves
-
-
         let legalMoves = [];
         // we gotta decide, in case this is not a 'check' situation, find normal legal moves
         // but, if it is check, find only moves which prevent or are legal in check
@@ -91,21 +96,33 @@ window.onload = function () {
         for (let legalMove of legalMoves) {
             legalMove.addEventListener("click", function moveHandler(event) {
                 event.preventDefault();
-                moveToSquare(piece, legalMove, false);
+
+                // we gotta check if this was pawn's speacial move
+                if (thisIsPawnsSpecialMove(piece, legalMove)) {// if yes, mark the pawn, for en passant purposes
+                    piece.classList.add("jumped");
+                }
+
+                // now we gotta check if this was a en passant move
+                if (thisIsEnPassantMove(piece, legalMove)) {
+                    enPassant(piece, legalMove);
+                }else if (thisIsCastleMove(piece, legalMove)) { // if yes, do not do normal move, but castle instead
+                    castle(piece, legalMove);
+                } else {//otherwise do normal move
+                    moveToSquare(piece, legalMove, false);
+                }
 
                 let isWhite = piece.classList.contains("white");
-                // once we moved - it cannot be check anymore.
+                // once we moved - it cannot be check anymore.- logically
                 isWhiteKingInCheck = false;
                 isBlackKingInCheck = false;
 
                 // the only possiblity is that we gave a check to opponent, this we check below:
-                // the color of the piece which gave a check \/ -- because it is still our turn, 
-                // and we are looking if WE gave a check to oponent ( we are assuming that WE are not in check);
                 // here we will store how many pieces checks the king
                 let nrOfCheckingPieces = isKingInCheck(isWhite);
 
                 // the color of potentially checked king
                 let checkedKingColor = isWhite ? "black" : "white";
+                // below, based on number of checking pieces and color, we raise the flag
                 if (checkedKingColor === "white" && nrOfCheckingPieces > 0) {
                     isWhiteKingInCheck = true;
                 } else if (checkedKingColor === "black" && nrOfCheckingPieces > 0) {
@@ -118,7 +135,7 @@ window.onload = function () {
 
                 if (nrOfCheckingPieces >= 2) {
                     isDoubleCheck = true;
-                } else if (nrOfCheckingPieces === 0) {
+                } else if (nrOfCheckingPieces < 2) {
                     isDoubleCheck = false;
                 }
 
@@ -130,6 +147,169 @@ window.onload = function () {
                 startTurn();
             }, { once: true });
         }
+    }
+
+    // this function do the en passant move -> normally make the move and then remove the pawn next to me
+    function enPassant(piece, legalMove) {
+        const isWhite = piece.classList.contains("white");
+        // with which square we will operate: piece, legalMove and the square next to piece in the direction of legalMove
+        const colDifference = getColumnsIndex(piece) - getColumnsIndex(legalMove);
+        const oppositeColor = isWhite ? "black" : "white";
+
+        let direction;
+        console.log("the direction is: " + direction);
+        if (isWhite && colDifference > 0) {
+            direction = "left";
+        } else if (isWhite && colDifference < 0) {
+            direction = "right";
+        } else if (!(isWhite) && colDifference > 0) {
+            direction = "right";
+        } else if (!(isWhite) && colDifference < 0) {
+            direction = "left";
+        }
+        let squareNextToPawn = getElement(piece, isWhite, direction);
+
+        let squareElement = document.createElement("span");
+        squareElement.className = "square";
+        let squareElement2 = document.createElement("span");
+        squareElement2.className = "square";
+
+        // part 1: move the piece to legalMove square
+        piece.parentElement.appendChild(squareElement);
+        piece.parentElement.removeChild(piece);
+        legalMove.parentElement.appendChild(piece);
+        legalMove.parentElement.removeChild(legalMove);
+
+        // part 2: remove the pawn next to our piece, move it to array for taken pieces
+        squareNextToPawn.parentElement.appendChild(squareElement2);
+        squareNextToPawn.parentElement.removeChild(squareNextToPawn);
+
+        if (oppositeColor === "white"){
+            removedWhitePieces.push(squareNextToPawn);
+        } else {
+            removedBlackPieces.push(squareNextToPawn);
+        }
+    }
+
+    // returns true if this was en passant move
+    function thisIsEnPassantMove(piece, legalMove) {
+        /*
+        Conditions:
+        a) piece is pawn
+        b) the move is to diagonal from the pawn, and there is no piece there
+        c) next to it, in the direction of the legal move, there is pawn which just made double move
+        */
+        const isWhite = piece.classList.contains("white");
+
+        if (!(piece.classList.contains("pawn"))) {
+            return false;
+        }
+
+        const colDifference = getColumnsIndex(piece) - getColumnsIndex(legalMove);
+        if (Math.abs(colDifference) !== 1) {// if there is no columns difference, or it is different than one, 
+            return false;
+        }
+
+        let direction;
+        if (isWhite && colDifference > 0) {
+            direction = "left";
+        } else if (isWhite && colDifference < 0) {
+            direction = "right";
+        } else if (!(isWhite) && colDifference > 0) {
+            direction = "right";
+        } else if (!(isWhite) && colDifference < 0) {
+            direction = "left";
+        }
+        let squareNextToPawn = getElement(piece, isWhite, direction);
+        // now check if on the square is the pawn, which just made double move -> his class should be:
+        // "oppositeColor piece pawn jumped now"
+        const oppositeColor = isWhite ? "black" : "white";
+        if (!(squareNextToPawn.className === `${oppositeColor} piece pawn jumped now`)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    // this function returns true if this is pawns special move - the double move on initial position
+    function thisIsPawnsSpecialMove(piece, legalMove) {
+        const isWhite = piece.classList.contains("white");
+
+        // first check if the piece is pawn
+        if (!(piece.classList.contains("pawn"))) {//if not
+            return false;
+        }
+
+        // then check if the pawn is on initial position
+        // let's get row index
+        let currentRowIndex = getRowIndex(piece);
+        let initialPosition = isWhite ? 6 : 1;
+        if (currentRowIndex !== initialPosition) {
+            return false;
+        }
+
+        // lastly, check if the legal move is the '2nd front element'.
+        let elementInFront = getElement(piece, isWhite, "front");
+        let secondFrontElement = getElement(elementInFront, isWhite, "front");
+
+        if (secondFrontElement !== legalMove) {
+            return false;
+        }
+
+        return true;
+    }
+
+    // this function returns true, if the piece is king and legal move which was clicked is two squares away from the king
+    function thisIsCastleMove(piece, legalMove) {
+        if (!(piece.classList.contains("king"))) {
+            return false;
+        }
+
+        // else we gotta check if the move is 
+        // a) on the same row
+        // b) difference of the cols is two
+        const kingsRow = getRowIndex(piece);
+        if (kingsRow !== getRowIndex(legalMove)) {
+            return false;
+        }
+
+        const kingsCol = getColumnsIndex(piece);
+        const colDiff = Math.abs(kingsCol - (getColumnsIndex(legalMove)));
+        if (colDiff !== 2) {
+            return false;
+        }
+
+        return true;
+    }
+
+    // this function will do the castle move --> move the king by two squares in given direction, 
+    // put the rook behind the king
+    function castle(king, legalMove) {
+        const isWhite = king.classList.contains("white");
+        const myColor = isWhite ? "white" : "black";
+        // find direction
+        let direction;
+        const colDiff = getColumnsIndex(king) - getColumnsIndex(legalMove);
+        if (colDiff > 0 && isWhite) {
+            direction = "left";
+        } else if (colDiff < 0 && isWhite) {
+            direction = "right";
+        } else if (colDiff > 0 && !(isWhite)) {
+            direction = "right";
+        } else {
+            direction = "left";
+        }
+
+        //get correct rook
+        let rook = document.getElementById(myColor + "-" + direction + "-rook");
+
+        // based on it get the first square in that direction -> move rook to that square
+        let firstSquareInThatDirection = getElement(king, isWhite, direction);
+        let secondSquareInThatDirection = getElement(firstSquareInThatDirection, isWhite, direction);
+
+        moveToSquare(rook, firstSquareInThatDirection);
+        // then get the second square in that direction -> move the king to that square
+        moveToSquare(king, secondSquareInThatDirection);
     }
 
     // returns the number of pieces checking the king
@@ -229,6 +409,7 @@ window.onload = function () {
         return blockingPieces;
     }
 
+    // returns squares betweem attaclomg piece and the king, including the attacking piece and excluding the king
     function getSquaresBetweenKingAndChecker(kingInCheck, checkingPiece) {
         let isCheckerWhite = checkingPiece.classList.contains("white");
 
@@ -264,6 +445,41 @@ window.onload = function () {
         return squaresBetween;
     }
 
+    // this function returns squares between the two provided pieces. It will stop in case there is some other piece. 
+    // this will work only of there are no pieces between the two. 
+    // in case they are different colors, last element of the array will be the piece2. otherwise, there will be only empty squares
+    function getSquaresBetweenTwoPieces(piece1, piece2) {
+        const piece1Color = piece1.classList.contains("white");
+        const piece2Color = piece2.classList.contains("white");
+
+        let rowsDifference = getRowIndex(piece1) - getRowIndex(piece2);
+        let colsDifference = getColumnsIndex(piece1) - getColumnsIndex(piece2);
+
+        let direction;
+        if (rowsDifference > 0 && colsDifference > 0) {
+            direction = piece2Color ? "top-left" : "bottom-right";
+        } else if (rowsDifference > 0 && colsDifference === 0) {
+            direction = piece2Color ? "front" : "back";
+        } else if (rowsDifference > 0 && colsDifference < 0) {
+            direction = piece2Color ? "top-right" : "bottom-left";
+        } else if (rowsDifference === 0 && colsDifference > 0) {
+            direction = piece2Color ? "left" : "right";
+        } else if (rowsDifference === 0 && colsDifference < 0) {
+            direction = piece2Color ? "right" : "left";
+        } else if (rowsDifference < 0 && colsDifference > 0) {
+            direction = piece2Color ? "bottom-left" : "top-right";
+        } else if (rowsDifference < 0 && colsDifference === 0) {
+            direction = piece2Color ? "back" : "front";
+        } else if (rowsDifference < 0 && colsDifference < 0) {
+            direction = piece2Color ? "bottom-right" : "top-left";
+        }
+
+        let squaresBetween = [];
+        squaresBetween.push(...getMoves(piece1, piece1Color, direction));
+
+        return squaresBetween;
+    }
+
     function highlightMoves(legalMoves) {
         let newLegalMoves = []
         for (let legalMove of legalMoves) {
@@ -295,6 +511,18 @@ window.onload = function () {
             highlighter.parentElement.removeChild(highlighter);
         }
 
+        // mark pawns which did jumped doulbe move THIS ROUND!
+        let jumpedPawns = document.querySelectorAll(".jumped");
+        for (let jumpedPawn of jumpedPawns) {
+            if (jumpedPawn.classList.contains("now")) {// this means that he was marked in previous round
+                // remove "now" and also "jumped"
+                jumpedPawn.classList.remove("now");
+                jumpedPawn.classList.remove("jumped");
+            } else {
+                jumpedPawn.classList.add("now");
+            }
+        }
+
         // remove all event listeners
         document.querySelectorAll(".piece").forEach(removeAllEventListeners);
     }
@@ -306,15 +534,10 @@ window.onload = function () {
 
 
     function moveToSquare(piece, elementOnPlace, isTemporaryMove) {
-        // now we already know this is a legal move, because we are moving to an element which 
-        // was in array of legal moves.
-        // there are two options. 1/ there is highlighter
-        // 2/ there is opponents piece
-        // 3/ everything else is wrong
-
         // this will be useful
         let isWhite = piece.classList.contains("white");
         let oppositeColor = isWhite ? "black" : "white";
+
         let elementsParent = elementOnPlace.parentElement;
         let squareElement = document.createElement("span");
         squareElement.className = "square";
@@ -338,6 +561,21 @@ window.onload = function () {
             // something is wrong
             console.log("incorrect field type to go to");
         }
+
+        // check if the piece is either rook or king, for castling check
+        if (piece.classList.contains("king") && isWhite) {
+            whiteKingHasMoved = true;
+        } else if (piece.classList.contains("king") && !(isWhite)) {
+            blackKingHasMoved = true;
+        } else if (piece.id === "white-left-rook") {
+            whiteLeftRookHasMoved = true;
+        } else if (piece.id === "white-right-rook") {
+            whiteRightRookHasMoved = true;
+        } else if (piece.id === "black-left-rook") {
+            blackLeftRookHasMoved = true;
+        } else if (piece.id === "black-right-rook") {
+            blackRightRookHasMoved = true;
+        }
     }
 
     function findLegalMoves(piece) {
@@ -348,6 +586,8 @@ window.onload = function () {
             if (pieceClass === "white" || pieceClass === "black") {
                 continue;
             } else if (pieceClass === "piece") {
+                continue;
+            } else if (pieceClass === "jumped") {
                 continue;
             } else {
                 // save the class
@@ -431,11 +671,81 @@ window.onload = function () {
             virtualBoard = getVirtualBoardInCurrentState();
         }
 
-        // above are the basic moves, next there are castles -- TODO
+        // here we will check if castles is possible
+        let leftRook;
+        let rightRook;
+        if (isWhite) {
+            leftRook = document.getElementById("white-left-rook");
+            rightRook = document.getElementById("white-right-rook");
+        } else {
+            leftRook = document.getElementById("black-left-rook");
+            rightRook = document.getElementById("black-right-rook");
+        }
+        if (castlesIsPossible(king, leftRook)) {
+            // add left castling move - long castle - we will add only two squares to left from king
+            let leftCastle = getElement(getElement(king, isWhite, "left"), isWhite, "left");
+            finalMoves.push(leftCastle);
+
+        }
+        if (castlesIsPossible(king, rightRook)) {
+            // add right castling move - short castle
+            let rightCastle = getElement(getElement(king, isWhite, "right"), isWhite, "right");
+            finalMoves.push(rightCastle);
+        }
         return finalMoves;
     }
 
+    // this function returns true if this king can castle 
+    function castlesIsPossible(king, rook) {
+        const isWhite = king.classList.contains("white");
+        // 1. check if king is in check
+        if (isWhite && isWhiteKingInCheck) {
+            return false;
+        } else if (!(isWhite) && isBlackKingInCheck) {
+            return false;
+        }
 
+        // 2. check if king or rook has moved
+        let rookIsLeft;
+        if (isWhite) {
+            rookIsLeft = rook.id === "white-left-rook";
+        } else {
+            rookIsLeft = rook.id === "black-left-rook";
+        }
+        if (rookIsLeft && isWhite && whiteLeftRookHasMoved) {
+            return false;
+        } else if (!rookIsLeft && isWhite && whiteRightRookHasMoved) {
+            return false;
+        } else if (rookIsLeft && !isWhite && blackLeftRookHasMoved) {
+            return false;
+        } else if (!rookIsLeft && !isWhite && blackRightRookHasMoved) {
+            return false;
+        }
+
+        if (isWhite && whiteKingHasMoved) {
+            return false;
+        } else if (!isWhite && blackKingHasMoved) {
+            return false;
+        }
+
+        // 3. check if there are no pieces in between king and the rook
+        // which means that the rook can defend the king
+        let castlesIsPossible = isThePieceDefended(king, rook);
+        if (!(castlesIsPossible)) {
+            return false;
+        }
+
+        // 4. check if there are no attacking pieces the squares between rook and king
+        let squaresBetween = getSquaresBetweenTwoPieces(king, rook);
+        for (let square of squaresBetween) {
+            // if given square is attacked
+            if (isAttacked(square, !isWhite)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     function findLegalQueenMoves(queen) {
         let legalMoves = [];
@@ -613,6 +923,7 @@ window.onload = function () {
          * normal front move - in case there is no piece in front
          * double move in case of initial position
          * diagonal takes moves in case there is opponents piece
+         * en passant - the oponnents pawn just made the double move and I stand on correct square, I can take it
          */
         let legalMoves = [];
         let isWhite = pawn.classList.contains("white");
@@ -629,8 +940,6 @@ window.onload = function () {
 
         // let's get row index
         let currentRowIndex = getRowIndex(pawn);
-        // lets find the column it is acutally on
-        let currentColumnIndex = getColumnsIndex(pawn);
         let initialPosition = isWhite ? 6 : 1;
         if (currentRowIndex === initialPosition) {
             let elementInFront = getElement(pawn, isWhite, "front");
@@ -654,6 +963,24 @@ window.onload = function () {
         let leftDiagonalElement = getElement(pawn, isWhite, "top-left");
         if (leftDiagonalElement !== null && leftDiagonalElement.classList.contains(oppositeColor)) {
             legalMoves.push(leftDiagonalElement);
+        }
+
+        // now check en passant case
+        const enPassantRow = isWhite ? 3 : 4;
+        let elementOnLeft = getElement(pawn, isWhite, "left");
+        let elementOnRight = getElement(pawn, isWhite, "right");
+        // there are these conditions:
+        // 1. my pawn is on 'en passant row'
+        // 2. Next to me, left or right, is oponnents pawn
+        // 3. the oponnents pawn just made the double move - his classlist contains "jumped"
+        // first try left side
+        if (elementOnLeft !== null && currentRowIndex === enPassantRow && elementOnLeft.className === `${oppositeColor} piece pawn jumped now`) {
+            // add en passant move, which is leftDiagonalElement
+            legalMoves.push(leftDiagonalElement);
+        }
+
+        if (elementOnRight !== null && currentRowIndex === enPassantRow && elementOnRight.className === `${oppositeColor} piece pawn jumped now`) {
+            legalMoves.push(rightDiagonalElement);
         }
 
         // return the array, which may be empty
@@ -866,6 +1193,7 @@ window.onload = function () {
     }
 
     // I will provide a square and a color and this function will return true if some piece attacks it
+    // the color is the color of attacking pieces
     function isAttacked(square, isWhite) {
         let piecesColor = isWhite ? "white" : "black";
         // get all pieces
@@ -1086,6 +1414,21 @@ window.onload = function () {
         }
         return false;
     }
+
+    // I will provide two piece -> first piece the targete, second piece the defender
+    // this function will answer this -> is target defended by the defender?
+    function isThePieceDefended(piece, defender) {
+        let isWhite = piece.classList.contains("white");
+        let sameColor = isWhite ? "white" : "black";
+
+        let defendingMoves = getDefendingPieceMoves(defender);
+        if (defendingMoves.includes(piece)) {
+            return true;
+        }
+
+        return false;
+    }
+
 
     /// SECTION for helping functions to calculate front, back, left, right, top-left top-right bottom-left and bottom-right diagonal squares
 
