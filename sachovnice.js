@@ -2,12 +2,6 @@ window.onload = function () {
     // all board rows:
     let boardRows = document.getElementsByClassName("board-row");
 
-    // array for removed black pieces
-    let removedBlackPieces = [];
-
-    // array for removed white pieces
-    let removedWhitePieces = [];
-
     // in this variable we will decide who's turn it is
     let isWhitesTurn = true;
 
@@ -49,12 +43,10 @@ window.onload = function () {
         for (let piece of pieces) {
             piece.addEventListener("click", handlePieceClick, { once: true });
         }
-
     }
 
     // this function will handle what happens after user clicks a piece
     function handlePieceClick(event) {
-
         let piece = event.target;
 
         // handle when the user clicks the same piece twice - cancel / remove highlighted moves
@@ -154,10 +146,8 @@ window.onload = function () {
         const isWhite = piece.classList.contains("white");
         // with which square we will operate: piece, legalMove and the square next to piece in the direction of legalMove
         const colDifference = getColumnsIndex(piece) - getColumnsIndex(legalMove);
-        const oppositeColor = isWhite ? "black" : "white";
 
         let direction;
-        console.log("the direction is: " + direction);
         if (isWhite && colDifference > 0) {
             direction = "left";
         } else if (isWhite && colDifference < 0) {
@@ -183,12 +173,7 @@ window.onload = function () {
         // part 2: remove the pawn next to our piece, move it to array for taken pieces
         squareNextToPawn.parentElement.appendChild(squareElement2);
         squareNextToPawn.parentElement.removeChild(squareNextToPawn);
-
-        if (oppositeColor === "white"){
-            removedWhitePieces.push(squareNextToPawn);
-        } else {
-            removedBlackPieces.push(squareNextToPawn);
-        }
+        addPieceToRemovedArray(squareNextToPawn);
     }
 
     // returns true if this was en passant move
@@ -554,6 +539,7 @@ window.onload = function () {
             piece.parentElement.removeChild(piece);
             elementsParent.appendChild(piece);
             if (!(isTemporaryMove)) {
+                console.log("I am here, before add piece to remove array.");
                 addPieceToRemovedArray(elementOnPlace);
             }
 
@@ -1602,11 +1588,15 @@ window.onload = function () {
 
     function addPieceToRemovedArray(piece) {
         let isWhite = piece.classList.contains("white");
-        if (isWhite) {
-            removedWhitePieces.push(piece);
+        
+        if (isWhite){
+            let takenWhitePiecesDiv = document.getElementById("taken-white-pieces");
+            takenWhitePiecesDiv.appendChild(piece);
         } else {
-            removedBlackPieces.push(piece);
+            let takenBlackPiecesDiv = document.getElementById("taken-black-pieces");
+            takenBlackPiecesDiv.appendChild(piece);
         }
+        piece.className = "col-1-8";
     }
 
     /// section VIRTUAL BOARD

@@ -23,11 +23,25 @@
             border: 1px solid black;
             width: 400px;
         }
+
+        .taken-pieces {
+            border: 1px solid black;
+            width: 400px;
+            min-height: 50px;
+        }
+
+        .col-1-8 {
+            flex: 0 0 12.5%;
+            /* 100 / 8 */
+            max-width: 12.5%;
+        }
     </style>
 </head>
 
 <body class="d-flex flex-column justify-content-center align-items-center">
     <h1>Sachovnice</h1>
+    <div id="taken-white-pieces" class="taken-pieces row">
+    </div>
     <div class="whole-board d-flex flex-column">
         <div class="board-row d-flex justify-content-center">
             <div class="white-square"><img id="black-right-rook" class="black piece rook" src="./rook_black.svg"></div>
@@ -109,6 +123,8 @@
             <div class="black-square"><img class="white piece knight" src="./knight_white.svg"></div>
             <div class="white-square"><img id="white-right-rook" class="white piece rook" src="./rook_white.svg"></div>
         </div>
+    </div>
+    <div id="taken-black-pieces" class="taken-pieces row">
     </div>
     <button id="move-up">move up</button>
     <form>
