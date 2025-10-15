@@ -539,13 +539,11 @@ window.onload = function () {
             piece.parentElement.removeChild(piece);
             elementsParent.appendChild(piece);
             if (!(isTemporaryMove)) {
-                console.log("I am here, before add piece to remove array.");
                 addPieceToRemovedArray(elementOnPlace);
             }
 
         } else {
             // something is wrong
-            console.log("incorrect field type to go to");
         }
 
         // check if the piece is either rook or king, for castling check
@@ -738,6 +736,13 @@ window.onload = function () {
 
         let isWhite = queen.classList.contains("white");
 
+        // before we start checking normal moves, check if you are not pinned
+        let possiblePinnedMovesIndexes = pieceIsPinned(queen);
+        let isThePiecePinned = false;
+        if (possiblePinnedMovesIndexes !== null){
+            isThePiecePinned = true;
+        }
+
         let frontMoves = getMoves(queen, isWhite, "front");
         let rightMoves = getMoves(queen, isWhite, "right");
         let backMoves = getMoves(queen, isWhite, "back");
@@ -756,6 +761,21 @@ window.onload = function () {
         legalMoves.push(...bottomRightDiagonalMoves);
         legalMoves.push(...bottomLeftDiagonalMoves);
 
+        // if the piece is pinned
+        if (isThePiecePinned){
+            // first convert indexes to actual elements
+            let possiblePinnedMoves = possiblePinnedMovesIndexes.map(
+                ([r, c]) => boardRows[r].children[c].firstElementChild
+            );
+
+            // now go through all legal moves and check if they are within the pinned moves, if yes, add them
+            let newLegalMoves = legalMoves.filter(
+                legalMove => possiblePinnedMoves.includes(legalMove)
+            );
+
+            return newLegalMoves;
+        }
+
         return legalMoves;
     }
 
@@ -770,6 +790,13 @@ window.onload = function () {
         let legalMoves = [];
 
         let isWhite = rook.classList.contains("white");
+
+        // before we start checking normal moves, check if you are not pinned
+        let possiblePinnedMovesIndexes = pieceIsPinned(rook);
+        let isThePiecePinned = false;
+        if (possiblePinnedMovesIndexes !== null){
+            isThePiecePinned = true;
+        }
 
         // the idea is this. I guess we will do this in four phases.
         // phase 1: go to front, until you hit a piece or hit borders
@@ -788,6 +815,22 @@ window.onload = function () {
         legalMoves.push(...rightMoves);
         legalMoves.push(...backMoves);
         legalMoves.push(...leftMoves);
+
+        // if the piece is pinned
+        if (isThePiecePinned){
+            // first convert indexes to actual elements
+            let possiblePinnedMoves = possiblePinnedMovesIndexes.map(
+                ([r, c]) => boardRows[r].children[c].firstElementChild
+            );
+
+            // now go through all legal moves and check if they are within the pinned moves, if yes, add them
+            let newLegalMoves = legalMoves.filter(
+                legalMove => possiblePinnedMoves.includes(legalMove)
+            );
+
+            return newLegalMoves;
+        }
+
         return legalMoves;
     }
 
@@ -803,6 +846,13 @@ window.onload = function () {
         let legalMoves = [];
 
         let isWhite = bishop.classList.contains("white");
+
+        // before we start checking normal moves, check if you are not pinned
+        let possiblePinnedMovesIndexes = pieceIsPinned(bishop);
+        let isThePiecePinned = false;
+        if (possiblePinnedMovesIndexes !== null){
+            isThePiecePinned = true;
+        }
 
         // the idea is this. I guess we will do this in four phases.
         // phase 1: go top left diagonal, until you hit a piece or hit boarders
@@ -821,6 +871,22 @@ window.onload = function () {
         legalMoves.push(...topRightDiagonalMoves);
         legalMoves.push(...bottomRightDiagonalMoves);
         legalMoves.push(...bottomLeftDiagonalMoves);
+
+        // if the piece is pinned
+        if (isThePiecePinned){
+            // first convert indexes to actual elements
+            let possiblePinnedMoves = possiblePinnedMovesIndexes.map(
+                ([r, c]) => boardRows[r].children[c].firstElementChild
+            );
+
+            // now go through all legal moves and check if they are within the pinned moves, if yes, add them
+            let newLegalMoves = legalMoves.filter(
+                legalMove => possiblePinnedMoves.includes(legalMove)
+            );
+
+            return newLegalMoves;
+        }
+
         return legalMoves;
     }
 
@@ -838,6 +904,13 @@ window.onload = function () {
         let isWhite = knight.classList.contains("white");
         let oppositeColor = isWhite ? "black" : "white";
 
+        // before we start checking normal moves, check if you are not pinned
+        let possiblePinnedMovesIndexes = pieceIsPinned(knight);
+        let isThePiecePinned = false;
+        if (possiblePinnedMovesIndexes !== null){
+            isThePiecePinned = true;
+        }
+
         // lets get all possible moves
         let possibleMoves = getAllKnightMoves(knight);
         // go through them and check for empty squares and opposite color pieces
@@ -850,6 +923,21 @@ window.onload = function () {
                 legalMoves.push(possibleMove);
             }
             // otherwise just do nothing
+        }
+
+        // if the piece is pinned
+        if (isThePiecePinned){
+            // first convert indexes to actual elements
+            let possiblePinnedMoves = possiblePinnedMovesIndexes.map(
+                ([r, c]) => boardRows[r].children[c].firstElementChild
+            );
+
+            // now go through all legal moves and check if they are within the pinned moves, if yes, add them
+            let newLegalMoves = legalMoves.filter(
+                legalMove => possiblePinnedMoves.includes(legalMove)
+            );
+
+            return newLegalMoves;
         }
 
         // return the array, which may be empty
@@ -914,6 +1002,13 @@ window.onload = function () {
         let legalMoves = [];
         let isWhite = pawn.classList.contains("white");
 
+        // before we start checking normal moves, check if you are not pinned
+        let possiblePinnedMovesIndexes = pieceIsPinned(pawn);
+        let isThePiecePinned = false;
+        if (possiblePinnedMovesIndexes !== null){
+            isThePiecePinned = true;
+        }
+
         // basic front move case
         let elementInFront = getElement(pawn, isWhite, "front");
         // if there is empty square
@@ -967,6 +1062,21 @@ window.onload = function () {
 
         if (elementOnRight !== null && currentRowIndex === enPassantRow && elementOnRight.className === `${oppositeColor} piece pawn jumped now`) {
             legalMoves.push(rightDiagonalElement);
+        }
+
+        // if the piece is pinned
+        if (isThePiecePinned){
+            // first convert indexes to actual elements
+            let possiblePinnedMoves = possiblePinnedMovesIndexes.map(
+                ([r, c]) => boardRows[r].children[c].firstElementChild
+            );
+
+            // now go through all legal moves and check if they are within the pinned moves, if yes, add them
+            let newLegalMoves = legalMoves.filter(
+                legalMove => possiblePinnedMoves.includes(legalMove)
+            );
+
+            return newLegalMoves;
         }
 
         // return the array, which may be empty
@@ -1066,6 +1176,94 @@ window.onload = function () {
         }
 
         return legalCheckMoves;
+    }
+
+    /// SECTION for Pinned stuff
+
+    // this function will return:
+    // a) if this piece is NOT pinned, NULL
+    // b) if this piece IS pinned, array of possible moves during the pin.
+    function pieceIsPinned(piece){
+        // we will use virtual board for this and we will do it like this:
+        // first we will check in which direction from the piece is the king
+        // then we will remove the piece, virtually and check that direction from the king
+        // if at the end of that direction is oponnents piece, we will check if it is piece
+        // which can attack the king -> in case of diagonal move, it can be only bishop or queen,
+        // in case of straight direction, it can be only rook and queen
+        const isWhite = piece.classList.contains("white");
+        const sameColor = isWhite ? "white" : "black";
+        const king = document.querySelector("." + sameColor + ".king");
+        let possibleMovesDuringPin = [];
+
+        const piecesRow = getRowIndex(piece);
+        const piecesCol = getColumnsIndex(piece);
+        const kingsRow = getRowIndex(king);
+        const kingsCol = getColumnsIndex(king);
+
+        console.log("the king: " + king.classList);
+        console.log("the piece: " + piece.classList);
+
+        // we will use direction from king to piece, so we can use same direction later
+        const rowsDifference = kingsRow - piecesRow;
+        const colsDifference = kingsCol - piecesCol;
+        console.log("rows difference: " + rowsDifference);
+        console.log("cols difference: " + colsDifference);
+
+        let direction;
+        if (rowsDifference > 0 && colsDifference > 0) {
+            direction = isWhite ? "top-left" : "bottom-right";
+        } else if (rowsDifference > 0 && colsDifference === 0) {
+            direction = isWhite ? "front" : "back";
+        } else if (rowsDifference > 0 && colsDifference < 0) {
+            direction = isWhite ? "top-right" : "bottom-left";
+        } else if (rowsDifference === 0 && colsDifference > 0) {
+            direction = isWhite ? "left" : "right";
+        } else if (rowsDifference === 0 && colsDifference < 0) {
+            direction = isWhite ? "right" : "left";
+        } else if (rowsDifference < 0 && colsDifference > 0) {
+            direction = isWhite ? "bottom-left" : "top-right";
+        } else if (rowsDifference < 0 && colsDifference === 0) {
+            direction = isWhite ? "back" : "front";
+        } else if (rowsDifference < 0 && colsDifference < 0) {
+            direction = isWhite ? "bottom-right" : "top-left";
+        }
+        console.log("the direction: " + direction);
+
+        // in this array we will store piece types which can pin the piece in given direction
+        let possiblePieceTypes = [];        
+        if(["front", "back", "left", "right"].includes(direction)){
+            possiblePieceTypes.push("q");
+            possiblePieceTypes.push("r");
+        } else if (["top-left", "top-right", "bottom-left", "bottom-right"].includes(direction)){
+            possiblePieceTypes.push("q");
+            possiblePieceTypes.push("b");
+        }
+
+
+        // now get virtual board in current state and remove the piece and check the direction from the king. 
+        let virtualBoard = getVirtualBoardInCurrentState();
+        virtualBoard[piecesRow][piecesCol] = "s";
+        
+        let kingMovesInDirection = getVirtualLongRangeMoves(virtualBoard,[kingsRow, kingsCol], isWhite, direction);
+        console.log("the king moves in given direction: " + kingMovesInDirection);
+        console.log("the direction which we should looke at: " + direction);
+        if (kingMovesInDirection === null || kingMovesInDirection.length === 0){
+            return null;
+        }
+        // check what is at the end of the array -> should be opposite color piece.
+        const lastItemIndexes = kingMovesInDirection.at(-1);
+        const lastItem = virtualBoard[lastItemIndexes[0]][lastItemIndexes[1]];
+        if (lastItem === "s" || lastItem === "h"){
+            return null;
+        }
+        const oppositeColorMark = isWhite ? "B" : "W";
+        const lastItemArray = lastItem.split(" ");
+        if(lastItemArray[0] === oppositeColorMark && possiblePieceTypes.includes(lastItemArray[1])){
+            possibleMovesDuringPin.push(...kingMovesInDirection);
+            possibleMovesDuringPin = possibleMovesDuringPin.filter(item => !(item[0] === piecesRow && item[1] === piecesCol));
+            return possibleMovesDuringPin;
+        }
+        return null;
     }
 
     /// SECTION for DEFENDiNG and ATTACKING stuff
@@ -1616,6 +1814,7 @@ window.onload = function () {
          * rook: r
          * queen: q
          * king: k
+         * No color symbols:
          * empty square: s
          * highlighter: h
          */
@@ -2106,7 +2305,6 @@ window.onload = function () {
         } else {
             newColumnIndex = currentColumnIndex + increment;
         }
-
         return newColumnIndex;
     }
 
