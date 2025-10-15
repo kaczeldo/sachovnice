@@ -94,8 +94,10 @@ window.onload = function () {
                     piece.classList.add("jumped");
                 }
 
-                // now we gotta check if this was a en passant move
-                if (thisIsEnPassantMove(piece, legalMove)) {
+                // we gotta check if this is not a PROMOTION of a pawn
+                if (thisIsPawnPromotionMove(piece, legalMove)) {
+                    moveAndPromote(piece, legalMove);
+                } else if (thisIsEnPassantMove(piece, legalMove)) {// now we gotta check if this was a en passant move
                     enPassant(piece, legalMove);
                 }else if (thisIsCastleMove(piece, legalMove)) { // if yes, do not do normal move, but castle instead
                     castle(piece, legalMove);
@@ -139,6 +141,21 @@ window.onload = function () {
                 startTurn();
             }, { once: true });
         }
+    }
+
+    function moveAndPromote(piece, legalMove) {
+        
+    }
+
+    function thisIsPawnPromotionMove(piece, legalMove){
+        const isWhite = piece.classList.contains("white");
+        const lastRowsIndex = isWhite ? 0 : 7;
+
+        if(getRowIndex(legalMove) === lastRowsIndex){
+            return true;
+        }
+
+        return false;
     }
 
     // this function do the en passant move -> normally make the move and then remove the pawn next to me

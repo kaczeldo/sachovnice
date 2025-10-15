@@ -8,32 +8,38 @@
     <title>Document</title>
     <style>
         .black-square {
-            width: 50px;
-            height: 50px;
+            width: 55px;
+            height: 55px;
             background-color: rgb(61, 190, 126);
         }
 
         .white-square {
-            width: 50px;
-            height: 50px;
+            width: 55px;
+            height: 55px;
             background-color: white;
         }
 
         .whole-board {
             border: 1px solid black;
-            width: 400px;
+            width: 440px;
         }
 
         .taken-pieces {
             border: 1px solid black;
-            width: 400px;
-            min-height: 50px;
+            width: 440px;
+            min-height: 55px;
         }
 
         .col-1-8 {
             flex: 0 0 12.5%;
             /* 100 / 8 */
             max-width: 12.5%;
+        }
+
+        .black-square, .white-square {
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
     </style>
 </head>
@@ -126,12 +132,6 @@
     </div>
     <div id="taken-black-pieces" class="taken-pieces row">
     </div>
-    <button id="move-up">move up</button>
-    <form>
-        <input id="move-row" value="row" />
-        <input id="move-column" value="column" />
-        <button type="submit" id="custom-move">move</button>
-    </form>
 
 
     <!-- SCRIPTS -->
