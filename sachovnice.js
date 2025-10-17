@@ -206,18 +206,39 @@ window.onload = function () {
                 // and now hide the popup again
                 popup.classList.add("hidden");
 
+                // the only possiblity is that we gave a check to opponent, this we check below:
+                // here we will store how many pieces checks the king
+                let nrOfCheckingPieces = isKingInCheck(isWhite);
+
+                // the color of potentially checked king
+                let checkedKingColor = isWhite ? "black" : "white";
+                // below, based on number of checking pieces and color, we raise the flag
+                if (checkedKingColor === "white" && nrOfCheckingPieces > 0) {
+                    isWhiteKingInCheck = true;
+                } else if (checkedKingColor === "black" && nrOfCheckingPieces > 0) {
+                    isBlackKingInCheck = true;
+                } else if (checkedKingColor === "white" && nrOfCheckingPieces === 0) {
+                    isWhiteKingInCheck = false;
+                } else if (checkedKingColor === "black" && nrOfCheckingPieces === 0) {
+                    isBlackKingInCheck = false;
+                }
+
+                if (nrOfCheckingPieces >= 2) {
+                    isDoubleCheck = true;
+                } else if (nrOfCheckingPieces < 2) {
+                    isDoubleCheck = false;
+                }
+
             }, { once: true });
         }
 
     }
 
-
-
     function thisIsPawnPromotionMove(piece, legalMove) {
         const isWhite = piece.classList.contains("white");
         const lastRowsIndex = isWhite ? 0 : 7;
 
-        if (getRowIndex(legalMove) === lastRowsIndex) {
+        if (piece.classList.contains("pawn") && getRowIndex(legalMove) === lastRowsIndex) {
             return true;
         }
 
@@ -396,13 +417,13 @@ window.onload = function () {
         let oponentsKing = document.getElementsByClassName(oponentsColor + " piece king");
         let friendlyPieces = document.getElementsByClassName(sameColor + " piece");
 
+
         let pieceAttackingMoves;
         for (let friendlyPiece of friendlyPieces) {
             pieceAttackingMoves = getAttackingMoves(friendlyPiece);
             if (pieceAttackingMoves.includes(oponentsKing.item(0))) {
                 checkingPieces.push(friendlyPiece);
             }
-
         }
 
         return checkingPieces;
@@ -454,18 +475,35 @@ window.onload = function () {
             return [];
         }
 
+        let knightIsGivingCheck = false;
+        if (checkingPiece[0].classList.contains("knight")){
+            knightIsGivingCheck = true;
+        }
+
         let squaresBetweenKingAndChecker = getSquaresBetweenKingAndChecker(kingInCheck[0], checkingPiece[0]);
         // now the hard part. We must take all the pieces of kingInCheck army and look if they can reach that square
         let kingsArmy = [];
         kingsArmy.push(...Array.from(document.getElementsByClassName(currentColor)));
 
         for (let piece of kingsArmy) {
+            
             // skip king
             if (piece.classList.contains("king")) {
                 continue;
             }
             // else get legal moves
             let legalMoves = findLegalMoves(piece);
+
+            console.log("Is checking knight included in the legal moves? " + legalMoves.includes(checkingPiece[0]));
+            console.log(" and the piece we are looking at is: " + piece.classList);
+            // in case the knight is giving check
+            if (knightIsGivingCheck && legalMoves.includes(checkingPiece[0])){// we will check only if the knight is included in the legal moves. 
+                blockingPieces.push(piece);
+                continue;
+            } else if(knightIsGivingCheck){ // if knight is giving check just skipt the piece
+                continue;
+            }
+
             // and check if the piece can get to any of the squares between king and checker
             let intersection = squaresBetweenKingAndChecker.some(item => legalMoves.includes(item));
 
@@ -1245,6 +1283,19 @@ window.onload = function () {
             return [];
         }
 
+        let checkingPieceIsKnight = false;
+        if (checkingPiece[0].classList.contains("knight")){
+            checkingPieceIsKnight = true;
+        }
+
+        // do a knight check
+        if (checkingPieceIsKnight && !(piece.classList.contains("king")) && legalMoves.includes(checkingPiece[0])){
+            legalCheckMoves.push(checkingPiece[0]);
+            return legalCheckMoves;
+        } else if (checkingPieceIsKnight && !(piece.classList.contains("king"))){
+            return legalCheckMoves;
+        }
+
         let squaresBetweenKingAndChecker = getSquaresBetweenKingAndChecker(kingInCheck[0], checkingPiece[0]);
         // if we are looking at kings moves, return normal legal moves
         if (piece.classList.contains("king")) {
@@ -1283,14 +1334,9 @@ window.onload = function () {
         const kingsRow = getRowIndex(king);
         const kingsCol = getColumnsIndex(king);
 
-        console.log("the king: " + king.classList);
-        console.log("the piece: " + piece.classList);
-
         // we will use direction from king to piece, so we can use same direction later
         const rowsDifference = kingsRow - piecesRow;
         const colsDifference = kingsCol - piecesCol;
-        console.log("rows difference: " + rowsDifference);
-        console.log("cols difference: " + colsDifference);
 
         let direction;
         if (rowsDifference > 0 && colsDifference > 0) {
@@ -1310,7 +1356,6 @@ window.onload = function () {
         } else if (rowsDifference < 0 && colsDifference < 0) {
             direction = isWhite ? "bottom-right" : "top-left";
         }
-        console.log("the direction: " + direction);
 
         // in this array we will store piece types which can pin the piece in given direction
         let possiblePieceTypes = [];
@@ -1328,8 +1373,6 @@ window.onload = function () {
         virtualBoard[piecesRow][piecesCol] = "s";
 
         let kingMovesInDirection = getVirtualLongRangeMoves(virtualBoard, [kingsRow, kingsCol], isWhite, direction);
-        console.log("the king moves in given direction: " + kingMovesInDirection);
-        console.log("the direction which we should looke at: " + direction);
         if (kingMovesInDirection === null || kingMovesInDirection.length === 0) {
             return null;
         }
@@ -1985,17 +2028,13 @@ window.onload = function () {
     function isVirtualKingInCheck(virtualBoard, isWhite) {
         let myColorMark = isWhite ? "W " : "B ";
         let myKing = findVirtualPiece(virtualBoard, myColorMark + "k");
-        console.log(myKing + " : king after move");
         let oponnentsPieces = getVirtualPieces(virtualBoard, !(isWhite));
 
         for (let oponnentsPiece of oponnentsPieces) {
-            console.log("check of the attacking piece: " + oponnentsPiece);
             if (isVirtuallyAttacking(virtualBoard, !(isWhite), oponnentsPiece, myKing)) {
-                console.log("it is attacking");
                 return true;
             }
         }
-        console.log("it is not attacking");
         return false;
     }
 
