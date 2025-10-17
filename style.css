@@ -1,0 +1,51 @@
+.black-square {
+    width: 55px;
+    height: 55px;
+    background-color: rgb(61, 190, 126);
+}
+
+.white-square {
+    width: 55px;
+    height: 55px;
+    background-color: white;
+}
+
+.whole-board {
+    border: 1px solid black;
+    width: 440px;
+}
+
+.taken-pieces {
+    border: 1px solid black;
+    width: 440px;
+    min-height: 55px;
+}
+
+.col-1-8 {
+    flex: 0 0 12.5%;
+    /* 100 / 8 */
+    max-width: 12.5%;
+}
+
+.black-square,
+.white-square {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Section for the popup windowm for PROMOTION */
+.popup {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 100;
+  transition: opacity 0.2s;
+}
+
+.hidden {
+  display: none;
+}
