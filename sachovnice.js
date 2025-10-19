@@ -5,9 +5,6 @@ window.onload = function () {
     // in this variable we will decide who's turn it is
     let isWhitesTurn = true;
 
-    // in this one we will recognize if the game was finished or not
-    let gameOver = false;
-
     // in this variable we will store pieces of given color
     let pieces;
 
@@ -24,21 +21,37 @@ window.onload = function () {
     let blackLeftRookHasMoved = false;
     let blackRightRookHasMoved = false;
 
-    function startTurn() {
-        if (gameOver) {
-            return;
-        }
+    // to check for checkmate
+    let thereIsOnlyKingToPlayWith = false;
 
+    let lastMessage = "GAME STARTS!";
+
+    function startTurn() {
         // depending on who's turn it is and if there is a check, choose pieces
         if (isWhitesTurn && !(isWhiteKingInCheck)) {
+            
             pieces = document.getElementsByClassName("white piece");
         } else if (isWhitesTurn && isWhiteKingInCheck) {
             pieces = getPiecesToPlayInCheck();
+            // for checkmate purposes, check if the only piece to play with is king
+            if (pieces.length === 1){//there is only king to play with
+                thereIsOnlyKingToPlayWith = true;
+            } else {
+                thereIsOnlyKingToPlayWith = false;
+            }
         } else if (!(isWhitesTurn) && !(isBlackKingInCheck)) {
             pieces = document.getElementsByClassName("black piece");
         } else if (!(isWhitesTurn) && isBlackKingInCheck) {
             pieces = getPiecesToPlayInCheck();
+            // for checkmate purposes, check if the only piece to play with is king
+            if (pieces.length === 1){//there is only king to play with
+                thereIsOnlyKingToPlayWith = true;
+            } else {
+                thereIsOnlyKingToPlayWith = false;
+            }
         }
+
+        
 
         for (let piece of pieces) {
             piece.addEventListener("click", handlePieceClick, { once: true });
@@ -144,7 +157,7 @@ window.onload = function () {
     }
 
     function moveAndPromote(piece, legalMove) {
-
+        console.log("just went into move and promote.");
         let popup;
         const isWhite = piece.classList.contains("white");
         const sameColor = isWhite ? "white" : "black";
@@ -172,13 +185,35 @@ window.onload = function () {
         popup.style.top = `${rect.top}px`;
 
         popup.classList.toggle("hidden");
+        // cleanup previous listeners:
+        for (let figure of popup.children) {
+            const clone = figure.cloneNode(true);
+            figure.replaceWith(clone);
+        }
 
         for (let figure of popup.children) {
             figure.addEventListener("click", function promote(event) {
+                console.log("I am looking and this figure: " + figure.firstElementChild.src);
                 event.preventDefault();
 
                 // FIND THE ACTUAL PAWN
-                const theActualPiece = boardRows[legalMoveRow].children[legalMoveCol].firstElementChild;
+                const maxRow = isWhite ? 0 : 7;
+                let allPawns = document.getElementsByClassName(sameColor + " piece pawn");
+                let thePawn;
+                for (let aPawn of allPawns) {
+                    console.log("We are actually looking at this pawn: " + getRowIndex(aPawn) + " and col: " + getColumnsIndex(aPawn));
+                    if (getRowIndex(aPawn) === maxRow) {
+                        thePawn = aPawn;
+                        break;
+                    }
+                }
+
+                if (thePawn === undefined) {
+                    console.log("The pawn was not found.");
+                    return;
+                } else {
+                    console.log("the pawn is still defined. and it is: " + getRowIndex(thePawn) + " and col: " + getColumnsIndex(thePawn));
+                }
 
                 let classListToAdd;
                 let newSrc;
@@ -199,9 +234,17 @@ window.onload = function () {
                     newSrc = `./bishop_${sameColor}.svg`;
                 }
 
-                theActualPiece.classList.remove("pawn");
-                theActualPiece.classList.add(classListToAdd);
-                theActualPiece.src = newSrc;
+                // CREATE NEW PIECE
+                let newPiece = document.createElement("img");
+                newPiece.className = sameColor + " piece " + classListToAdd;
+                newPiece.src = newSrc;
+
+                console.log("I am here before promoting. and changing the pieces.");
+                // replace the pawn with the piece
+                thePawn.parentElement.appendChild(newPiece);
+                thePawn.parentElement.removeChild(thePawn);
+                // and 'shrink' it
+                thePawn.className = "";
 
                 // and now hide the popup again
                 popup.classList.add("hidden");
@@ -476,7 +519,7 @@ window.onload = function () {
         }
 
         let knightIsGivingCheck = false;
-        if (checkingPiece[0].classList.contains("knight")){
+        if (checkingPiece[0].classList.contains("knight")) {
             knightIsGivingCheck = true;
         }
 
@@ -486,7 +529,7 @@ window.onload = function () {
         kingsArmy.push(...Array.from(document.getElementsByClassName(currentColor)));
 
         for (let piece of kingsArmy) {
-            
+
             // skip king
             if (piece.classList.contains("king")) {
                 continue;
@@ -494,13 +537,11 @@ window.onload = function () {
             // else get legal moves
             let legalMoves = findLegalMoves(piece);
 
-            console.log("Is checking knight included in the legal moves? " + legalMoves.includes(checkingPiece[0]));
-            console.log(" and the piece we are looking at is: " + piece.classList);
             // in case the knight is giving check
-            if (knightIsGivingCheck && legalMoves.includes(checkingPiece[0])){// we will check only if the knight is included in the legal moves. 
+            if (knightIsGivingCheck && legalMoves.includes(checkingPiece[0])) {// we will check only if the knight is included in the legal moves. 
                 blockingPieces.push(piece);
                 continue;
-            } else if(knightIsGivingCheck){ // if knight is giving check just skipt the piece
+            } else if (knightIsGivingCheck) { // if knight is giving check just skipt the piece
                 continue;
             }
 
@@ -797,6 +838,12 @@ window.onload = function () {
             let rightCastle = getElement(getElement(king, isWhite, "right"), isWhite, "right");
             finalMoves.push(rightCastle);
         }
+        if (thereIsOnlyKingToPlayWith && finalMoves.length === 0){
+            // CHECKMATE
+            const sameColor = isWhite ? "white" : "black";
+            lastMessage = "CHECKMATE!! " + oppositeColor + " hase checkmated the " + sameColor + "! GAME OVER";
+        }
+
         return finalMoves;
     }
 
@@ -1267,7 +1314,6 @@ window.onload = function () {
             default:
                 break;
         }
-
         // now go through legal moves and pick only those which are on the line between attacker and king
         let legalCheckMoves = [];
 
@@ -1284,15 +1330,15 @@ window.onload = function () {
         }
 
         let checkingPieceIsKnight = false;
-        if (checkingPiece[0].classList.contains("knight")){
+        if (checkingPiece[0].classList.contains("knight")) {
             checkingPieceIsKnight = true;
         }
 
         // do a knight check
-        if (checkingPieceIsKnight && !(piece.classList.contains("king")) && legalMoves.includes(checkingPiece[0])){
+        if (checkingPieceIsKnight && !(piece.classList.contains("king")) && legalMoves.includes(checkingPiece[0])) {
             legalCheckMoves.push(checkingPiece[0]);
             return legalCheckMoves;
-        } else if (checkingPieceIsKnight && !(piece.classList.contains("king"))){
+        } else if (checkingPieceIsKnight && !(piece.classList.contains("king"))) {
             return legalCheckMoves;
         }
 
