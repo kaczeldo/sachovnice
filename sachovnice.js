@@ -23,15 +23,20 @@ window.onload = function () {
 
     // to check for checkmate
     let thereIsOnlyKingToPlayWith = false;
+    let gameOver = false;
 
-    let lastMessage = "GAME STARTS!";
+    const statusBarPar = document.getElementById("status-bar").firstElementChild;
 
     function startTurn() {
+        if (gameOver){
+           return;  
+        }        
         // depending on who's turn it is and if there is a check, choose pieces
         if (isWhitesTurn && !(isWhiteKingInCheck)) {
-            
+            statusBarPar.textContent = "White to play.";
             pieces = document.getElementsByClassName("white piece");
         } else if (isWhitesTurn && isWhiteKingInCheck) {
+            statusBarPar.textContent = "White to play. White is in check!";
             pieces = getPiecesToPlayInCheck();
             // for checkmate purposes, check if the only piece to play with is king
             if (pieces.length === 1){//there is only king to play with
@@ -40,8 +45,10 @@ window.onload = function () {
                 thereIsOnlyKingToPlayWith = false;
             }
         } else if (!(isWhitesTurn) && !(isBlackKingInCheck)) {
+            statusBarPar.textContent = "Black to play.";
             pieces = document.getElementsByClassName("black piece");
         } else if (!(isWhitesTurn) && isBlackKingInCheck) {
+            statusBarPar.textContent = "Black to play. Black is in check!";
             pieces = getPiecesToPlayInCheck();
             // for checkmate purposes, check if the only piece to play with is king
             if (pieces.length === 1){//there is only king to play with
@@ -49,9 +56,7 @@ window.onload = function () {
             } else {
                 thereIsOnlyKingToPlayWith = false;
             }
-        }
-
-        
+        }        
 
         for (let piece of pieces) {
             piece.addEventListener("click", handlePieceClick, { once: true });
@@ -841,7 +846,8 @@ window.onload = function () {
         if (thereIsOnlyKingToPlayWith && finalMoves.length === 0){
             // CHECKMATE
             const sameColor = isWhite ? "white" : "black";
-            lastMessage = "CHECKMATE!! " + oppositeColor + " hase checkmated the " + sameColor + "! GAME OVER";
+            statusBarPar.textContent = "CHECKMATE!! " + oppositeColor + " has checkmated the " + sameColor + "! GAME OVER";
+            gameOver = true;
         }
 
         return finalMoves;

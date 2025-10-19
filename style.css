@@ -49,3 +49,18 @@
 .hidden {
   display: none;
 }
+
+/* Section for status bar */
+#status-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    width: 250px;
+    border: 1px solid black;
+    margin-left: 50px;
+}
+
+#status-bar > p {
+    text-align: center;
+}
