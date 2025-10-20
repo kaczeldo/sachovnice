@@ -1,10 +1,8 @@
 window.onload = function () {
     // all board rows:
     let boardRows = document.getElementsByClassName("board-row");
-
     // in this variable we will decide who's turn it is
     let isWhitesTurn = true;
-
     // in this variable we will store pieces of given color
     let pieces;
 
@@ -14,6 +12,7 @@ window.onload = function () {
 
     let isDoubleCheck = false;
 
+    // variables for recognizing the catles possibility
     let whiteKingHasMoved = false;
     let blackKingHasMoved = false;
     let whiteLeftRookHasMoved = false;
@@ -28,9 +27,9 @@ window.onload = function () {
     const statusBarPar = document.getElementById("status-bar").firstElementChild;
 
     function startTurn() {
-        if (gameOver){
-           return;  
-        }        
+        if (gameOver) {
+            return;
+        }
         // depending on who's turn it is and if there is a check, choose pieces
         if (isWhitesTurn && !(isWhiteKingInCheck)) {
             statusBarPar.textContent = "White to play.";
@@ -39,7 +38,7 @@ window.onload = function () {
             statusBarPar.textContent = "White to play. White is in check!";
             pieces = getPiecesToPlayInCheck();
             // for checkmate purposes, check if the only piece to play with is king
-            if (pieces.length === 1){//there is only king to play with
+            if (pieces.length === 1) {//there is only king to play with
                 thereIsOnlyKingToPlayWith = true;
             } else {
                 thereIsOnlyKingToPlayWith = false;
@@ -51,12 +50,12 @@ window.onload = function () {
             statusBarPar.textContent = "Black to play. Black is in check!";
             pieces = getPiecesToPlayInCheck();
             // for checkmate purposes, check if the only piece to play with is king
-            if (pieces.length === 1){//there is only king to play with
+            if (pieces.length === 1) {//there is only king to play with
                 thereIsOnlyKingToPlayWith = true;
             } else {
                 thereIsOnlyKingToPlayWith = false;
             }
-        }        
+        }
 
         for (let piece of pieces) {
             piece.addEventListener("click", handlePieceClick, { once: true });
@@ -843,10 +842,17 @@ window.onload = function () {
             let rightCastle = getElement(getElement(king, isWhite, "right"), isWhite, "right");
             finalMoves.push(rightCastle);
         }
-        if (thereIsOnlyKingToPlayWith && finalMoves.length === 0){
-            // CHECKMATE
+        if (thereIsOnlyKingToPlayWith && finalMoves.length === 0) {
             const sameColor = isWhite ? "white" : "black";
-            statusBarPar.textContent = "CHECKMATE!! " + oppositeColor + " has checkmated the " + sameColor + "! GAME OVER";
+            // CHECKMATE
+            if (isWhite && isWhiteKingInCheck) {
+                statusBarPar.textContent = "CHECKMATE!! " + oppositeColor + " has checkmated the " + sameColor + "! GAME OVER";
+            } else if (!(isWhite) && isBlackKingInCheck){
+                statusBarPar.textContent = "CHECKMATE!! " + oppositeColor + " has checkmated the " + sameColor + "! GAME OVER";
+            } else {//PAT
+                statusBarPar.textContent = "PAT!! It is a draw at the end.";
+            }
+
             gameOver = true;
         }
 
